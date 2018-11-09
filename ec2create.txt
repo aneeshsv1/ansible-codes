@@ -1,0 +1,96 @@
+---
+
+- hosts: localhost
+
+  connection: local
+
+  gather_facts: no
+
+  tasks:
+  
+  - name: Launch {{ os_name }} EC2 instances
+    ec2:
+
+         region: {{ region }}
+         key_name: {{ pem }}
+         group: {{ secgroup }}
+         instance_type: {{ instance_type }}
+         instance_tags:
+env: {{ environment }}
+         Name: {{ ec2_name }}
+         OS: {{ os_name }}
+         image: {{ ami }}
+         wait: yes
+
+         count: {{ count }}
+         vpc_subnet_id: {{ subnet }}
+         assign_public_ip: {{ assign_public_ip }}
+
+ 
+ - name: Gathering EC2 details
+
+         ec2_remote_facts:
+
+         filters:
+
+             instance-state-name: running
+
+             tag:env: {{ environment }}
+             tag:Name: {{ ec2_name }}
+             tag:OS: {{ os_name }}
+             region: {{ region }}
+         register: ec2
+
+
+  - debug:
+
+         msg: "Running instance '{{ item.tags }}' with name '{{item.public_dns_name }}' and with IP '{{item.public_ip_address}}'"
+	
+    with_items: "{{ ec2.instances }}"
+
+  - name: Wait for SSH to come up
+
+    wait_for:
+
+         host: "{{ item.public_dns_name }}"
+
+         port: 22
+         delay: 60
+
+         timeout: 120
+
+         state: started
+
+    	 with_items: "{{ ec2.instances }}"
+
+
+Variables
+=========
+instance_type: t2.micro
+ami: ami-6871a115
+region: us-east-1
+pem: aneeshawskey
+secgroup: ssh_secgroup
+environment: developement
+ec2_name: Tomcat_Server
+os_name: RHEL7
+count: 1
+subnet: subnet-04765e2b
+assign_public_ip: yes
+
+
+Alternate
+=========
+
+- name: Launching an EC2 Instance
+  local_action: ec2
+       instance_type={{ instance_type}}
+       image={{ ami }}
+       region={{ region }}
+       keypair={{ pem }}
+       count={{count}}
+       instance_profile_name={{ instance_profile_name }}
+       group={{ security_group }}
+       wait=true
+       volumes={{volumes}}
+ register: ec2
