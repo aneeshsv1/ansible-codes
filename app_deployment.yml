@@ -3,4 +3,5 @@
   connection: local
   gather_facts: no
   roles:
+    - vpc_deployment
     - ec2_deployment

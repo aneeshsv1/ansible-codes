@@ -4,8 +4,8 @@ instance_type: t2.micro
 ami: ami-18726478
 region: us-west-1
 pem: aneesh-kp
-secgroup: aneesh-ssh-sg
+secgroup: "{{ sg_vpc.group_name }}"
 count: 1
-subnet: subnet-d8110fbf
+subnet: "{{ vpc_subnet.subnet.id }}"
 assign_public_ip: yes
 os_name: RHEL7.5
