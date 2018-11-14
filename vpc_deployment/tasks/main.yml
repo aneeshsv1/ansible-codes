@@ -15,6 +15,23 @@
         region: "{{ region }}"
         map_public: true
       register: vpc_subnet
+    - name: Create InternetGateway
+      ec2_vpc_igw:
+        state: present
+        region: "{{ region }}"
+        vpc_id: "{{ vpc_net.vpc.id }}"
+      register: vpc_igw
+    - name: Create RouteTable
+      ec2_vpc_route_table:
+          state: present
+          vpc_id: "{{ vpc_net.vpc.id }}"
+          region: "{{ region }}"
+          subnets: "{{ vpc_subnet.subnet.id }}"
+          routes:
+            - dest: 0.0.0.0/0
+              gateway_id: "{{ vpc_igw.gateway_id }}"
+      when: vpc_igw is changed
+      register: vpc_route_table
     - name: Create Security Group
       ec2_group:
         state: present

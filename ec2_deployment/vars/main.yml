@@ -9,3 +9,4 @@ count: 1
 subnet: "{{ vpc_subnet.subnet.id }}"
 assign_public_ip: yes
 os_name: RHEL7.5
+server_name: TomcatServer

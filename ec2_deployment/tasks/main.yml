@@ -1,5 +1,12 @@
 ---
 # tasks file for ec2_deployment
+  - name: Gathering existing EC2 instance details
+    ec2_instance_facts:
+      region: "{{ region }}"
+      filters:
+        tag:Name: "{{ server_name }}"
+        instance-state-name: running
+    register: existing_ec2
   - name: Launch "{{ os_name }}" EC2 instances
     ec2:
       region: "{{ region }}"
@@ -11,7 +18,14 @@
       count: "{{ count }}"
       vpc_subnet_id: "{{ subnet }}"
       assign_public_ip: "{{ assign_public_ip }}"
+      instance_tags:
+        Name: "{{ server_name }}"
     register: ec2
+    when: existing_ec2.instances == [] 
+  - name: Checking if an Instance exists with same name; fail if there is instance with same name or skip this task and proceed to create the Instance 
+    fail:
+      msg: "The Instance with name'{{ server_name }}' already exists. Please crete the Instance with another name"
+    when: existing_ec2.instances != []  
   - name: Waiting for SSH to come up
     wait_for:
       host: "{{ item.public_ip }}"
@@ -23,7 +37,7 @@
     no_log: True
     register: ssh_result
     ignore_errors: yes
-  - name: Checking the success of VM creation and SSH connection
+  - name: Checking the success of VM creation and SSH connection. Skip if success or fail otherwise
     fail:
       msg: "Something went wrong, not able to establish ssh connection to the newly created VM. Please check VM status from AWS console and it's SG/ACL policies"
     when: ssh_result is failed
