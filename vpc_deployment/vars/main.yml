@@ -1,8 +1,0 @@
----
-# vars file for vpc_deployment
-    vpc_name: myvpc
-    cidr_net: 10.0.0.0/16
-    cidr_subnet: 10.0.1.0/24
-    region: us-west-1
-    sg_name: aneesh_ssh_sg
-    sg_description: Aneesh SG for ssh

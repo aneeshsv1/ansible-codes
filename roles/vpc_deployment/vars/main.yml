@@ -1,0 +1,8 @@
+---
+# vars file for vpc_deployment. Variables in the play book took precedence
+    vpc_name:
+    cidr_net: 
+    cidr_subnet: 
+    region: 
+    sg_name: 
+    sg_description: 

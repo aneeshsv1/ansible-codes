@@ -1,0 +1,14 @@
+---
+# tasks file for patch_deplyment
+- name: Executing pre-patching tasks
+  shell: uname -r
+  register: current_kernel
+- name: Patch the server
+  yum:
+    name: '*'
+    state: latest
+- name: Executing post-patching tasks
+  shell: uname -r
+  register: new_kernel
+- debug:
+    msg: Servers patched successfully from kernel version "{{ current_kernel.stdout }}" to "{{ new_kernel.stdout }}"

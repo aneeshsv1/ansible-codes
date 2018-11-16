@@ -1,0 +1,25 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  roles:
+    - role: vpc_deployment
+      vpc_name: myvpc
+      cidr_net: 10.0.0.0/16
+      cidr_subnet: 10.0.1.0/24
+      region: us-west-1
+      sg_name: aneesh_ssh_sg
+      sg_description: Aneesh SG for ssh
+    - role: ec2_deployment
+      count: 1 
+      server_name: TomcatServer
+      instance_type: t2.micro
+      os_name: RHEL7.5
+      region: us-west-1
+      assign_public_ip: yes
+      ami: ami-18726478
+      pem: aneesh-kp1
+- hosts: patch_inventory
+  become: yes
+  roles:
+    - patch_deployment
