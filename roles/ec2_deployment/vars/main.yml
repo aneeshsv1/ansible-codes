@@ -2,10 +2,13 @@
 # vars file for ec2_deployment
 instance_type:
 ami: 
-pem: 
+key_name: 
+key_location: 
 secgroup: "{{ sg_vpc.group_name }}"
 count: 2 
 subnet: "{{ vpc_subnet.subnet.id }}"
 assign_public_ip: 
 os_name:
 server_name: 
+windows_admin_user:
+windows_admin_passwd:
