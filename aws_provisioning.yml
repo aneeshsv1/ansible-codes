@@ -10,22 +10,18 @@
       region: us-west-1
       sg_name_linux: aneesh_ssh_sg
       sg_description_linux: Aneesh SG for ssh
-      sg_name_windows: aneesh_winrm_sg
-      sg_description_windows: Aneesh SG for winrm
+      when: os_type == "Linux"
     - role: ec2_deployment
       count: 1 
       server_name: TomcatServer
       instance_type: t2.micro
       region: us-west-1
       assign_public_ip: yes
-      os_type: Linux
       ami: ami-18726478
-#      ami: ami-08838e38cfe4854ad
       key_name: my_key
       key_location: ./my_key.pem
-      windows_admin_user: Administrator
-      windows_admin_passwd: 
+      when: os_type == "Linux"
 - hosts: patch_inventory
   become: yes
   roles:
-    - patch_deployment
+    - role: patch_deployment

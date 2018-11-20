@@ -5,10 +5,8 @@ ami:
 key_name: 
 key_location: 
 secgroup: "{{ sg_vpc.group_name }}"
-count: 2 
+count: 1 
 subnet: "{{ vpc_subnet.subnet.id }}"
 assign_public_ip: 
-os_name:
+os_type: 
 server_name: 
-windows_admin_user:
-windows_admin_passwd:

@@ -32,7 +32,7 @@
               gateway_id: "{{ vpc_igw.gateway_id }}"
       when: vpc_igw is changed
       register: vpc_route_table
-    - name: Create Security Group for Linux
+    - name: Create Security Group for SSH Access 
       ec2_group:
         state: present
         name: "{{ sg_name_linux }}"
@@ -45,21 +45,6 @@
             to_port: 22
             cidr_ip: 0.0.0.0/0
       register: sg_vpc
-      when: os_type == "Linux"
-    - name: Create Security Group for Windows
-      ec2_group:
-        state: present
-        name: "{{ sg_name_windows }}"
-        description: "{{ sg_description_windows }}"
-        region: "{{ region }}"
-        vpc_id: "{{ vpc_net.vpc.id }}"
-        rules:
-          - proto: tcp
-            from_port: 5986
-            to_port: 5986
-            cidr_ip: 0.0.0.0/0
-       register: sg_vpc
-       when: os_type == "Windows"
     - name: Create new EC2 key
       ec2_key:
         name: my_key
