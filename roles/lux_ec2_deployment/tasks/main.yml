@@ -1,16 +1,20 @@
 ---
 # tasks file for ec2_deployment
-  - name: Gathering existing EC2 instance details
+  - name: Linux - Gathering existing EC2 instance details
     ec2_instance_facts:
       region: "{{ region }}"
       filters:
         tag:Name: "{{ server_name }}"
         instance-state-name: running
     register: existing_ec2
-  - name: Launch '{{ os_type }}' EC2 instances
+  - name: Linux - Checking if an Instance exists with same name; fail if there is instance with same name or skip this task and proceed to create the Instance
+    fail:
+      msg: "The Instance with name'{{ server_name }}' already exists. Please crete the Instance with another name"
+    when: existing_ec2.instances != []
+  - name: Linux - Launching EC2 instance/s
     ec2:
       region: "{{ region }}"
-      key_name: "{{ key_name }}"
+      key_name: "{{ lux_key_name }}"
       group: "{{ sg_vpc.group_name }}" 
       instance_type: "{{ instance_type }}"
       image: "{{ ami }}"
@@ -22,11 +26,7 @@
         Name: "{{ server_name }}"
     register: ec2
     when: existing_ec2.instances == []
-  - name: Checking if an Instance exists with same name; fail if there is instance with same name or skip this task and proceed to create the Instance 
-    fail:
-      msg: "The Instance with name'{{ server_name }}' already exists. Please crete the Instance with another name"
-    when: existing_ec2.instances != []
-  - name: Waiting for SSH to come up for a Linux Server
+  - name: Linux - Waiting for SSH to come up on the Server/s
     wait_for:
       host: "{{ item.public_ip }}"
       port: 22
@@ -37,7 +37,7 @@
     no_log: True
     register: ssh_result
     ignore_errors: yes
-  - name: Checking the success of VM creation and SSH connection. Skip if success or fail otherwise
+  - name: Linux - Checking the successful creation of Instance and SSH connection. Skip if success or fail otherwise
     fail:
       msg: "Something went wrong, not able to establish ssh connection to the newly created VM. Please check VM status from AWS console and it's SG/ACL policies"
     when: 
@@ -45,11 +45,11 @@
   - debug:
       msg: "Successfully launched '{{ count }}' instance with name '{{item.public_dns_name }}' and with IP '{{item.public_ip}}'"
     with_items: "{{ ec2.instances }}"
-  - name: Add the newly added Linux Instances to a Dynamic Inventory
+  - name: Linux - Add the newly created Instance/s to a Dynamic Inventory to manage
     add_host:
       name: "{{ item.public_ip }}"
-      groups: patch_inventory
+      groups: lux_ec2_servers
       ansible_ssh_user: ec2-user
-      ansible_ssh_private_key_file: "{{ key_location }}" 
+      ansible_ssh_private_key_file: "{{ lux_key_location }}" 
     with_items: "{{ ec2.instances }}"  
     no_log: True

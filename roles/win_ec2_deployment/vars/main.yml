@@ -1,0 +1,13 @@
+---
+# vars file for ec2_deployment
+instance_type:
+ami:
+key_name:
+key_location:
+secgroup: "{{ sg_vpc.group_name }}"
+count: 1
+subnet: "{{ vpc_subnet.subnet.id }}"
+assign_public_ip:
+os_type:
+server_name:
+bootstrap_script:

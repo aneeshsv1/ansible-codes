@@ -1,18 +1,18 @@
 ---
 # tasks file for patch_deplyment
-- name: Executing pre-patching tasks
+- name: Linux - Executing pre-patching tasks
   shell: uname -r
   register: current_kernel
-- name: Patch the server
+- name: Linux - Patch the server
   yum:
     name: '*'
     state: latest
-- name: Reboot Host after patching
+- name: Linux - Reboot Host after patching
   shell: sleep 10 && /sbin/shutdown -r now
   async: 300
   poll: 0
   become: true
-- name: Waiting for server booting up
+- name: Linux - Waiting for server booting up
   local_action: wait_for
   args:
     host: '*'
@@ -22,8 +22,8 @@
     state: started
   become: false
 #  with_items: "{{ ec2.instances }}"
-- name: Executing post-patching tasks
+- name: Linux - Executing post-patching tasks
   shell: uname -r
   register: new_kernel
 - debug:
-    msg: Servers patched successfully to the latest kernel version "{{ new_kernel.stdout }}" from "{{ current_kernel.stdout }}"
+    msg: Linux - Servers patched successfully to the latest kernel version "{{ new_kernel.stdout }}" from "{{ current_kernel.stdout }}"

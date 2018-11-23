@@ -1,0 +1,3 @@
+sudo ansible-playbook aws_provisioning.yml --extra-vars os_type=Windows
+or
+sudo ansible-playbook aws_provisioning.yml --extra-vars os_type=Linux

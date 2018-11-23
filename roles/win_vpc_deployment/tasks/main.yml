@@ -1,13 +1,13 @@
 ---
 # tasks file for vpc_deployment
-    - name: Create VPC
+    - name: Windows - Create VPC
       ec2_vpc_net:
         state: present
         name: "{{ vpc_name }}"
         cidr_block: "{{ cidr_net }}"
         region: "{{ region }}"
       register: vpc_net
-    - name: Create Subnet
+    - name: Windows - Create Subnet
       ec2_vpc_subnet:
         state: present
         vpc_id: "{{ vpc_net.vpc.id }}"
@@ -15,13 +15,13 @@
         region: "{{ region }}"
         map_public: true
       register: vpc_subnet
-    - name: Create InternetGateway
+    - name: Windows - Create InternetGateway
       ec2_vpc_igw:
         state: present
         region: "{{ region }}"
         vpc_id: "{{ vpc_net.vpc.id }}"
       register: vpc_igw
-    - name: Create RouteTable
+    - name: Windows - Create RouteTable
       ec2_vpc_route_table:
           state: present
           vpc_id: "{{ vpc_net.vpc.id }}"
@@ -32,24 +32,41 @@
               gateway_id: "{{ vpc_igw.gateway_id }}"
       when: vpc_igw is changed
       register: vpc_route_table
-    - name: Create Security Group for SSH Access 
+    - name: Windows - Create Security Group
       ec2_group:
         state: present
-        name: "{{ sg_name_linux }}"
-        description: "{{ sg_description_linux }}"
+        name: "{{ sg_name_windows }}"
+        description: "{{ sg_description_windows }}"
         region: "{{ region }}"
         vpc_id: "{{ vpc_net.vpc.id }}"
         rules:
           - proto: tcp
-            from_port: 22
-            to_port: 22
+            from_port: 80
+            to_port: 80
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 5985
+            to_port: 5985
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 5986
+            to_port: 5986
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 3389
+            to_port: 3389
+            cidr_ip: 0.0.0.0/0
+          - proto: -1
             cidr_ip: 0.0.0.0/0
       register: sg_vpc
-    - name: Create new EC2 key
+    - name: Windows - Create new EC2 key
       ec2_key:
-        name: my_key
+        name: "{{ win_key_name }}"
         region: "{{ region }}"
-      register: ec2_key_result
-    - name: Save the private key
-      copy: content= "{{ ec2_key_result.key.private_key }}" dest= "./my_key.pem" mode=0600
-      when: ec2_key_result.changed
+      register: win_key_result
+    - name: Windows - Save the private key
+      copy:
+        content: "{{ win_key_result.key.private_key }}"
+        dest: "{{ win_key_location }}"
+        mode: 0600
+      when: win_key_result.changed

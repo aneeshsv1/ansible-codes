@@ -3,25 +3,50 @@
   connection: local
   gather_facts: no
   roles:
-    - role: vpc_deployment
+    - role: lux_vpc_deployment
       vpc_name: myvpc
       cidr_net: 10.0.0.0/16
       cidr_subnet: 10.0.1.0/24
       region: us-west-1
       sg_name_linux: aneesh_ssh_sg
       sg_description_linux: Aneesh SG for ssh
+      lux_key_name: lux_key
+      lux_key_location: ./lux_key.pem
       when: os_type == "Linux"
-    - role: ec2_deployment
+    - role: lux_ec2_deployment
       count: 1 
-      server_name: TomcatServer
+      server_name: LuxTomcatServer
       instance_type: t2.micro
       region: us-west-1
       assign_public_ip: yes
       ami: ami-18726478
-      key_name: my_key
-      key_location: ./my_key.pem
+      lux_key_name: lux_key
+      lux_key_location: ./lux_key.pem
       when: os_type == "Linux"
-- hosts: patch_inventory
+    - role: win_vpc_deployment
+      vpc_name: myvpc
+      cidr_net: 10.0.0.0/16
+      cidr_subnet: 10.0.1.0/24
+      region: us-west-1
+      sg_name_windows: aneesh_winrm_sg
+      sg_description_windows: Aneesh SG for winrm
+      win_key_name: win_key
+      win_key_location: ./win_key.pem
+      when: os_type == "Windows"
+    - role: win_ec2_deployment
+      count: 1
+      server_name: WinTomcatServer
+      instance_type: t2.micro
+      region: us-west-1
+      assign_public_ip: yes
+      ami: ami-08838e38cfe4854ad
+      win_key_name: win_key
+      win_key_location: ./win_key.pem
+      when: os_type == "Windows"
+- hosts: lux_ec2_servers 
   become: yes
   roles:
-    - role: patch_deployment
+    - role: lux_patch_deployment
+- hosts: win_ec2_servers
+  roles:
+    - role: win_pkg_deployment

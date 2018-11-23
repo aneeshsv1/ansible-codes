@@ -1,0 +1,66 @@
+---
+# tasks file for ec2_deployment
+  - name: Windows - Gathering existing EC2 instance details
+    ec2_instance_facts:
+      region: "{{ region }}"
+      filters:
+        tag:Name: "{{ server_name }}"
+        instance-state-name: running
+    register: existing_ec2
+  - name: Windows - Checking if an Instance exists with same name; fail if there is instance with same name or skip this task and proceed to create the Instance
+    fail:
+      msg: "The Instance with name'{{ server_name }}' already exists. Please crete the Instance with another name"
+    when: existing_ec2.instances != []
+  - name: Windows - Launching EC2 instance/s
+    ec2:
+      region: "{{ region }}"
+      key_name: "{{ win_key_name }}"
+      group: "{{ sg_vpc.group_name }}"
+      instance_type: "{{ instance_type }}"
+      image: "{{ ami }}"
+      wait: yes
+      count: "{{ count }}"
+      vpc_subnet_id: "{{ subnet }}"
+      assign_public_ip: "{{ assign_public_ip }}"
+      user_data: "<powershell>
+                 Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Force\n
+                 $storageDir = $pwd\n
+                 $webclient = New-Object System.Net.WebClient\n
+                 $url = \"https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1\"\n
+                 $file = \"C:\\ConfigureRemotingForAnsible.ps1\"\n
+                 $webclient.DownloadFile($url,$file)\n
+                 $VerbosePreference=\"Continue\"\n
+                 & $file\n
+                 </powershell>"
+      instance_tags: 
+        Name: "{{ server_name }}"
+    register: ec2
+    when: existing_ec2.instances == []
+  - name: Windows - wait for WinRM to answer on host/s
+    wait_for:
+      port: 5986
+      host: "{{ item.public_ip }}"
+      state: started
+      timeout: 300
+    with_items: "{{ ec2.instances }}"
+    register: winrm_result
+    ignore_errors: yes
+    no_log: True
+  - name: Windows - Get the Administrator password for the newly created Instance
+    ec2_win_password:
+      instance_id: "{{ ec2.instances[0].id }}"
+      region: "{{ region }}"
+      key_file: "{{ win_key_location }}" 
+    register: Administrator_password
+  - name: Windows - Add the newly created Instance/s to a Dynamic Inventory to manage 
+    add_host:
+      hostname: "{{ item.public_ip }}"
+      groupname: win_ec2_servers
+      ansible_port: "5986"
+      ansible_connection: winrm
+      ansible_user: Administrator
+      ansible_password: "{{ Administrator_password.win_password }}"
+      ansible_winrm_server_cert_validation: ignore
+      ansible_winrm_transport: ssl
+    with_items: "{{ ec2.instances }}"
+    no_log: True

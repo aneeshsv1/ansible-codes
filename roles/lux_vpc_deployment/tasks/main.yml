@@ -1,0 +1,58 @@
+---
+# tasks file for vpc_deployment
+    - name: Linux - Create VPC
+      ec2_vpc_net:
+        state: present
+        name: "{{ vpc_name }}"
+        cidr_block: "{{ cidr_net }}"
+        region: "{{ region }}"
+      register: vpc_net
+    - name: Linux - Create Subnet
+      ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{ vpc_net.vpc.id }}"
+        cidr: "{{ cidr_subnet }}"
+        region: "{{ region }}"
+        map_public: true
+      register: vpc_subnet
+    - name: Linux - Create InternetGateway
+      ec2_vpc_igw:
+        state: present
+        region: "{{ region }}"
+        vpc_id: "{{ vpc_net.vpc.id }}"
+      register: vpc_igw
+    - name: Linux - Create RouteTable
+      ec2_vpc_route_table:
+          state: present
+          vpc_id: "{{ vpc_net.vpc.id }}"
+          region: "{{ region }}"
+          subnets: "{{ vpc_subnet.subnet.id }}"
+          routes:
+            - dest: 0.0.0.0/0
+              gateway_id: "{{ vpc_igw.gateway_id }}"
+      when: vpc_igw is changed
+      register: vpc_route_table
+    - name: Linux - Create Security Group for SSH Access 
+      ec2_group:
+        state: present
+        name: "{{ sg_name_linux }}"
+        description: "{{ sg_description_linux }}"
+        region: "{{ region }}"
+        vpc_id: "{{ vpc_net.vpc.id }}"
+        rules:
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: 0.0.0.0/0
+      register: sg_vpc
+    - name: Linux - Create new EC2 key
+      ec2_key:
+        name: "{{ lux_key_name }}" 
+        region: "{{ region }}"
+      register: lux_key_result
+    - name: Linux - Save the private key
+      copy: 
+        content: "{{ lux_key_result.key.private_key }}" 
+        dest: "{{ lux_key_location }}" 
+        mode: 0600
+      when: lux_key_result.changed
